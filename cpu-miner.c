@@ -101,13 +101,11 @@ struct workio_cmd {
 };
 
 enum sha256_algos {
-	ALGO_SCRYPT,		/* scrypt(1024,1,1) */
-	ALGO_SHA256D,		/* SHA-256d */
+	ALGO_ROULETTE,		/* Roulettecoin */
 };
 
 static const char *algo_names[] = {
-	[ALGO_SCRYPT]		= "scrypt",
-	[ALGO_SHA256D]		= "sha256d",
+	[ALGO_ROULETTE]		= "roulette",
 };
 
 bool opt_debug = false;
@@ -128,7 +126,7 @@ int opt_timeout = 0;
 static int opt_scantime = 5;
 static json_t *opt_config;
 static const bool opt_time = true;
-static enum sha256_algos opt_algo = ALGO_SCRYPT;
+static enum sha256_algos opt_algo = ALGO_ROULETTE;
 static int opt_n_threads;
 static int num_processors;
 static char *rpc_url;
@@ -676,10 +674,7 @@ static void stratum_gen_work(struct stratum_ctx *sctx, struct work *work)
 		free(xnonce2str);
 	}
 
-	if (opt_algo == ALGO_SCRYPT)
-		diff_to_target(work->target, sctx->job.diff / 65536.0);
-	else
-		diff_to_target(work->target, sctx->job.diff);
+	diff_to_target(work->target, sctx->job.diff / 65536.0);
 }
 
 static void *miner_thread(void *userdata)
@@ -689,7 +684,6 @@ static void *miner_thread(void *userdata)
 	struct work work = {{0}};
 	uint32_t max_nonce;
 	uint32_t end_nonce = 0xffffffffU / opt_n_threads * (thr_id + 1) - 0x20;
-	unsigned char *scratchbuf = NULL;
 	char s[16];
 	int i;
 
@@ -710,11 +704,6 @@ static void *miner_thread(void *userdata)
 		affine_to_cpu(thr_id, thr_id % num_processors);
 	}
 	
-	if (opt_algo == ALGO_SCRYPT)
-	{
-		scratchbuf = scrypt_buffer_alloc();
-	}
-
 	while (1) {
 		unsigned long hashes_done;
 		struct timeval tv_start, tv_end, diff;
@@ -763,7 +752,7 @@ static void *miner_thread(void *userdata)
 			      - time(NULL);
 		max64 *= thr_hashrates[thr_id];
 		if (max64 <= 0)
-			max64 = opt_algo == ALGO_SCRYPT ? 0xfffLL : 0x1fffffLL;
+			max64 = 0xfffLL;
 		if (work.data[19] + max64 > end_nonce)
 			max_nonce = end_nonce;
 		else
@@ -774,14 +763,9 @@ static void *miner_thread(void *userdata)
 
 		/* scan nonces for a proof-of-work hash */
 		switch (opt_algo) {
-		case ALGO_SCRYPT:
-			rc = scanhash_scrypt(thr_id, work.data, scratchbuf, work.target,
+		case ALGO_ROULETTE:
+			rc = scanhash_roulette(thr_id, work.data, work.target,
 			                     max_nonce, &hashes_done);
-			break;
-
-		case ALGO_SHA256D:
-			rc = scanhash_sha256d(thr_id, work.data, work.target,
-			                      max_nonce, &hashes_done);
 			break;
 
 		default:

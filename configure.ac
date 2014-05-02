@@ -109,6 +109,8 @@ else
 	JANSSON_LIBS=-ljansson
 fi
 
+SPH_LIBS="sphlib/libsph.a"
+
 LIBCURL_CHECK_CONFIG(, 7.15.2, ,
   [AC_MSG_ERROR([Missing required libcurl >= 7.15.2])])
 
@@ -116,9 +118,11 @@ AC_SUBST(JANSSON_LIBS)
 AC_SUBST(PTHREAD_FLAGS)
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(WS2_LIBS)
+AC_SUBST(SPH_LIBS)
 
 AC_CONFIG_FILES([
 	Makefile
+	sphlib/Makefile
 	compat/Makefile
 	compat/jansson/Makefile
 	])
