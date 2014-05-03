@@ -128,6 +128,9 @@ static json_t *opt_config;
 static const bool opt_time = true;
 static enum sha256_algos opt_algo = ALGO_ROULETTE;
 static int opt_n_threads;
+int opt_device = -1;
+int opt_worksize = 64;
+int opt_intensity = 17;
 static int num_processors;
 static char *rpc_url;
 static char *rpc_userpass;
@@ -173,6 +176,9 @@ Options:\n\
       --cert=FILE       certificate for mining server using SSL\n\
   -x, --proxy=[PROTOCOL://]HOST[:PORT]  connect through a proxy\n\
   -t, --threads=N       number of miner threads (default: number of processors)\n\
+  -d, --device=N        GPU to mine on\n\
+  -w, --worksize=N      GPU work size\n\
+  -i, --intensity=N     GPU intensity\n\
   -r, --retries=N       number of times to retry if a network call fails\n\
                           (default: retry indefinitely)\n\
   -R, --retry-pause=N   time to pause between retries, in seconds (default: 30)\n\
@@ -207,7 +213,7 @@ static char const short_options[] =
 #ifdef HAVE_SYSLOG_H
 	"S"
 #endif
-	"a:c:Dhp:Px:qr:R:s:t:T:o:u:O:V";
+	"a:c:d:Dhi:p:Px:qr:R:s:t:T:o:u:O:Vw:";
 
 static struct option const options[] = {
 	{ "algo", 1, NULL, 'a' },
@@ -218,7 +224,9 @@ static struct option const options[] = {
 	{ "cert", 1, NULL, 1001 },
 	{ "config", 1, NULL, 'c' },
 	{ "debug", 0, NULL, 'D' },
+	{ "device", 1, NULL, 'd' },
 	{ "help", 0, NULL, 'h' },
+	{ "intensity", 1, NULL, 'i' },
 	{ "no-longpoll", 0, NULL, 1003 },
 	{ "no-redirect", 0, NULL, 1009 },
 	{ "no-stratum", 0, NULL, 1007 },
@@ -238,6 +246,7 @@ static struct option const options[] = {
 	{ "user", 1, NULL, 'u' },
 	{ "userpass", 1, NULL, 'O' },
 	{ "version", 0, NULL, 'V' },
+	{ "worksize", 1, NULL, 'w' },
 	{ 0, 0, 0, 0 }
 };
 
@@ -765,7 +774,7 @@ static void *miner_thread(void *userdata)
 		switch (opt_algo) {
 		case ALGO_ROULETTE:
 			rc = scanhash_roulette(thr_id, work.data, work.target,
-			                     max_nonce, &hashes_done);
+			                     max_nonce, &hashes_done, thr_id);
 			break;
 
 		default:
@@ -1225,6 +1234,15 @@ static void parse_arg (int key, char *arg)
 		break;
 	case 'S':
 		use_syslog = true;
+		break;
+	case 'd':
+		opt_device = atoi(arg);
+		break;
+	case 'i':
+		opt_intensity = atoi(arg);
+		break;
+	case 'w':
+		opt_worksize = atoi(arg);
 		break;
 	case 'V':
 		show_version_and_exit();

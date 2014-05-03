@@ -19,10 +19,10 @@ dist_man_MANS	= minerd.1
 
 minerd_SOURCES	= elist.h miner.h compat.h \
 		  cpu-miner.c util.c \
-		  sha2.c roulette.c \
+		  sha2.c roulette.cpp \
 		  roulette.h
 
 minerd_LDFLAGS	= $(PTHREAD_FLAGS)
-minerd_LDADD	= @LIBCURL@ @JANSSON_LIBS@ @SPH_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@
+minerd_LDADD	= @LIBCURL@ @JANSSON_LIBS@ @SPH_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@ -lOpenCL
 minerd_CPPFLAGS = @LIBCURL_CPPFLAGS@
 
