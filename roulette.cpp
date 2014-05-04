@@ -83,15 +83,16 @@ extern "C" {
 int scanhash_roulette(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
 	uint32_t max_nonce, unsigned long *hashes_done, int thread_id)
 {
-	uint32_t n = pdata[19] - 1;
+	uint32_t nHashes = 1 << (opt_intensity - 4);
+        unsigned int loops = 16 * nHashes;
+        unsigned int gsize = 64;
+
 	const uint32_t first_nonce = pdata[19];
 	const uint32_t Htarg = ptarget[7];
 
 	uint32_t hash64[8] __attribute__((aligned(32)));
 	uint32_t endiandata[32];
 
-	uint32_t nHashes = 1 << (opt_intensity - 4);
-	
 	//we need bigendian data...
 	int kk=0;
 	for (; kk < 32; kk++)
@@ -170,9 +171,6 @@ int scanhash_roulette(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
 	err = clearer.setArg(0, inputCL);
 	checkErr(err, "Kernel::Kernel()");
 
-        unsigned int loops = 16 * nHashes;
-        unsigned int gsize = 64;
-
 	cl::CommandQueue queue(*m.context, m.devices[(opt_device == -1 ? thread_id % m.devices.size() : opt_device)], CL_QUEUE_PROFILING_ENABLE, &err);
 	checkErr(err, "CommandQueue::CommandQueue()");
 
@@ -181,7 +179,7 @@ int scanhash_roulette(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
 	err = queue.enqueueNDRangeKernel(clearer, cl::NullRange, cl::NDRange(loops), cl::NDRange(gsize), NULL, NULL);
 	checkErr(err, "ComamndQueue::enqueueNDRangeKernel()");
 
-	err = queue.enqueueNDRangeKernel( kernel, cl::NullRange, cl::NDRange(loops), cl::NDRange(gsize), NULL, NULL);
+	err = queue.enqueueNDRangeKernel( kernel, cl::NDRange(first_nonce), cl::NDRange(loops), cl::NDRange(gsize), NULL, NULL);
 	checkErr(err, "ComamndQueue::enqueueNDRangeKernel()");
 
 	for(int j = 0; j < 16; j++)
@@ -220,7 +218,7 @@ int scanhash_roulette(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
 	}
 
 	*hashes_done = loops;
-	pdata[19] = n + loops;
+	pdata[19] += loops;
 	return 0;
 }
 
