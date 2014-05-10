@@ -112,7 +112,7 @@ int scanhash_roulette(int thr_id, uint32_t *pdata, const uint32_t *ptarget,
 	checkErr(err, "Buffer::Buffer()");
 	cl::Buffer outputCL(*m.context, CL_MEM_READ_WRITE, (16 + 2) * nHashes * (64 + 8), NULL, &err);
 	checkErr(err, "Buffer::Buffer()");
-	cl::Buffer countersCL(*m.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, (16 + 1) * sizeof(*countersH), countersH, &err);
+	cl::Buffer countersCL(*m.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, sizeof(countersH), countersH, &err);
 	checkErr(err, "Buffer::Buffer()");
 
         unsigned int outH[256] = { 0 };
